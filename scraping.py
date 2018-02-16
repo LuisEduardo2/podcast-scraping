@@ -2,52 +2,119 @@ from requests import get as resget
 from bs4 import BeautifulSoup
 import urllib.request, json
 
-def main(url, downall=False):
-    print('Loading page!')
-    response = resget(url)
-    if(response.status_code == 200):
-        soup = BeautifulSoup(response.content, 'html.parser')
-        links = soup.find_all('enclosure')
-        for link in links:
-            url = link.get('url')
-            filename = url.split('/')[-1]
-            try:
-                with open(filename, 'r') as f:
-                    print('{} already exists.'.format(filename))
-            except IOError:
-                print('Current downloading file: {}'.format(filename))
-                f = urllib.request.urlopen(url)
-                data = f.read()
-                with open(filename, "wb") as code:
-                    code.write(data)
-                    print(':: {} successfully downloaded!'.format(filename))
-            if(not downall):
+clear = lambda: __import__('os').system('cls') if __import__('os').name == 'nt' else __import__('os').system('clear')
+
+class PodcastScraping():
+    def __init__(self, confdata):
+        self.data = confdata
+
+    def menu(self):
+        while True:
+            print('-------------------------------------')
+            print(':  0 - Sair                         :')
+            print(':  1 - Cadastrar novo podcast       :')
+            print(':  2 - Listar podcasts Cadastrados  :')
+            print(':  3 - Baixar Episodio(s)           :')
+            print('-------------------------------------')
+            while True:
+                try:
+                    option = int(input('Digite uma opção: '))
+                    if(option < 0 or option > 3):
+                        raise(TypeError)
+                except TypeError:
+                    print('Opção invalida.')
+                else:
+                    break
+            if(option == 0):
                 break
+            if(option == 1):
+                self.Register()
+            if(option == 2):
+                self.List()
+            if(option == 3):
+                self.PodcastDownload()
+
+    def Register(self):
+        print(':-+.. Cadastrar novo Podcast ..+-:')
+        key = (str(input('Insira o nome do podcast: '))).replace(' ','_')
+        url = str(input('Insira a url do feed rss: '))
+        self.data['values'].append( [key, url] )
+        json.dumps(self.data,indent=2)
+        with open('config.json','w') as file:
+            file.write(json.dumps(self.data))
+                
+    def List(self):
+        (':-+.. PodCasts Cadastrados ..+-:')
+        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]   
+        print('\n')
+    
+    def PodcastDownload(self):
+        print(':-+.. Donwload de Episodios ..+-:')
+        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
+        try:
+            code = int(input('Escolha um podcast: '))
+            if(code < 0 or code >= len(self.data['values'])):
+                raise(TypeError)
+        except TypeError:
+            print('Codigo invalido!')
+        else:
+            podname, url = self.data['values'][code]
+            self.__DownloadEpisode(podname, url)
+
+    def __DownloadFile(self,url,filename,podname):
+        try:
+            with open('podcasts'+podname+'/'+filename, 'r') as f:
+                print('{} already exists.'.format(filename))
+        except IOError:
+            print('Current downloading file: {}'.format(filename))
+            f = urllib.request.urlopen(url)
+            data = f.read()
+            with open('podcasts'+podname+'/'+filename, "wb") as code:
+                code.write(data)
+                print(':: {} successfully downloaded'.format(filename))
+
+    def __DownloadEpisode(self,podname,podurl):
+        print('Loading page')
+        response = resget(podurl)
+        if(response.status_code == 200):
+            print('Trying to retrieve the episodes')
+            soup = BeautifulSoup(response.content, 'html.parser')
+            links = []
+            for link in reversed(soup.find_all('enclosure')):
+                url = link.get('url')
+                filename = url.split('/')[-1]
+                links.append( [url,filename] )
+
+            if(len(links) == 0):
+                print('No episode was found')
+            else:
+                [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
+                selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
+                __import__('os').system('mkdir '+podname)
+                if(selected == 'all'):
+                    for url,filename in links:
+                        try:
+                            self.__DownloadFile(url,filename,podname)
+                        except ValueError:
+                            print("Podcast de nome '{}' não encontrado".format(filename))
+                    print('Episodios Baixados com sucesso!')
+                else:
+                    for i in selected.split('-'):
+                        url,filename = links[int(i)]
+                        try:
+                            self.__DownloadFile(url,filename,podname)
+                        except(TypeError,ValueError):
+                            print('Podcast de código {} não encontrado'.format(i))
+
+def main():
+    try:
+        confdata = json.load(open('config.json'))
+    except FileNotFoundError:
+        confdata = {}
+        confdata['values'] = []
+    finally:
+        PodcastScraping(confdata).menu()
+    input('\nPress any key to continue!')
 
 if(__name__ == '__main__'):
-    try:
-        conf = json.load(open('config.json'))
-        if(conf['url'] == '' or type(conf['url']) != str):
-           raise(TypeError)
-    except IOError:
-        print('Oops, config.json not found.')
-    except Exception:
-        print('Oops, something went wrong.')
-    else:
-        main(conf['url'],conf['down_all_ep'])
-    input('\nPress any key to continue!')
-    
-
-    
-
-
-
-
-
-    
-
-    
-
-
-
-
+    main()
