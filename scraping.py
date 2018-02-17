@@ -63,13 +63,13 @@ class PodcastScraping():
 
     def __DownloadFile(self,url,filename,podname):
         try:
-            with open('podcasts'+podname+'/'+filename, 'r') as f:
+            with open('podcasts/'+podname+'/'+filename, 'r') as f:
                 print('{} already exists.'.format(filename))
         except IOError:
             print('Current downloading file: {}'.format(filename))
             f = urllib.request.urlopen(url)
             data = f.read()
-            with open('podcasts'+podname+'/'+filename, "wb") as code:
+            with open('podcasts/'+podname+'/'+filename, "wb") as code:
                 code.write(data)
                 print(':: {} successfully downloaded'.format(filename))
 
@@ -90,7 +90,7 @@ class PodcastScraping():
             else:
                 [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
                 selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
-                __import__('os').system('mkdir '+podname)
+                __import__('os').system('mkdir podcasts/'+podname)
                 if(selected == 'all'):
                     for url,filename in links:
                         try:
@@ -113,6 +113,7 @@ def main():
         confdata = {}
         confdata['values'] = []
     finally:
+        __import__('os').system('mkdir podcasts)
         PodcastScraping(confdata).menu()
     input('\nPress any key to continue!')
 
