@@ -1,5 +1,6 @@
 from requests import get as resget
 from bs4 import BeautifulSoup
+from pyperclip import copy, paste
 import urllib.request, json
 
 clear = lambda: __import__('os').system('cls') if __import__('os').name == 'nt' else __import__('os').system('clear')
@@ -27,6 +28,7 @@ class PodcastScraping():
                     break
             if(option == 0):
                 break
+            clear()
             if(option == 1):
                 self.Register()
             if(option == 2):
@@ -35,9 +37,15 @@ class PodcastScraping():
                 self.PodcastDownload()
 
     def Register(self):
+        print("OBS: Para colar um conteudo da area de transferencia, digite 'paste' sem aspas!")
         print(':-+.. Cadastrar novo Podcast ..+-:')
         key = (str(input('Insira o nome do podcast: '))).replace(' ','_')
+        if(key=='paste'): key=paste()
         url = str(input('Insira a url do feed rss: '))
+        if(url=='paste'): url=paste()
+
+        print('Nome: {} - Url: {}'.format(key,url))
+
         self.data['values'].append( [key, url] )
         json.dumps(self.data,indent=2)
         with open('config.json','w') as file:
@@ -45,8 +53,7 @@ class PodcastScraping():
                 
     def List(self):
         (':-+.. PodCasts Cadastrados ..+-:')
-        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]   
-        print('\n')
+        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
     
     def PodcastDownload(self):
         print(':-+.. Donwload de Episodios ..+-:')
@@ -55,7 +62,7 @@ class PodcastScraping():
             code = int(input('Escolha um podcast: '))
             if(code < 0 or code >= len(self.data['values'])):
                 raise(TypeError)
-        except TypeError:
+        except (TypeError,ValueError):
             print('Codigo invalido!')
         else:
             podname, url = self.data['values'][code]
@@ -75,36 +82,40 @@ class PodcastScraping():
 
     def __DownloadEpisode(self,podname,podurl):
         print('Loading page')
-        response = resget(podurl)
-        if(response.status_code == 200):
-            print('Trying to retrieve the episodes')
-            soup = BeautifulSoup(response.content, 'html.parser')
-            links = []
-            for link in reversed(soup.find_all('enclosure')):
-                url = link.get('url')
-                filename = url.split('/')[-1]
-                links.append( [url,filename] )
+        try:
+            response = resget(podurl)
+        except Exception:
+            print('Ocorreu um erro ao conectar a url cadastrada, tente novamente mais tarde!')
+        else:
+            if(response.status_code == 200):
+                print('Trying to retrieve the episodes')
+                soup = BeautifulSoup(response.content, 'html.parser')
+                links = []
+                for link in reversed(soup.find_all('enclosure')):
+                    url = link.get('url')
+                    filename = url.split('/')[-1]
+                    links.append( [url,filename] )
 
-            if(len(links) == 0):
-                print('No episode was found')
-            else:
-                [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
-                selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
-                __import__('os').system('mkdir podcasts/'+podname)
-                if(selected == 'all'):
-                    for url,filename in links:
-                        try:
-                            self.__DownloadFile(url,filename,podname)
-                        except ValueError:
-                            print("Podcast de nome '{}' não encontrado".format(filename))
-                    print('Episodios Baixados com sucesso!')
+                if(len(links) == 0):
+                    print('No episode was found')
                 else:
-                    for i in selected.split('-'):
-                        url,filename = links[int(i)]
-                        try:
-                            self.__DownloadFile(url,filename,podname)
-                        except(TypeError,ValueError):
-                            print('Podcast de código {} não encontrado'.format(i))
+                    [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
+                    selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
+                    __import__('os').system('mkdir podcasts/'+podname)
+                    if(selected == 'all'):
+                        for url,filename in links:
+                            try:
+                                self.__DownloadFile(url,filename,podname)
+                            except ValueError:
+                                print("Podcast de nome '{}' não encontrado".format(filename))
+                        print('Episodios Baixados com sucesso!')
+                    else:
+                        for i in selected.split('-'):
+                            url,filename = links[int(i)]
+                            try:
+                                self.__DownloadFile(url,filename,podname)
+                            except(TypeError,ValueError):
+                                print('Podcast de código {} não encontrado'.format(i))
 
 def main():
     try:
@@ -113,9 +124,9 @@ def main():
         confdata = {}
         confdata['values'] = []
     finally:
-        __import__('os').system('mkdir podcasts)
+        __import__('os').system('mkdir podcasts')
         PodcastScraping(confdata).menu()
-    input('\nPress any key to continue!')
+    input('Press any key to continue!')
 
 if(__name__ == '__main__'):
     main()
