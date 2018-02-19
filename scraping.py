@@ -49,7 +49,7 @@ class PodcastScraping():
         self.data['values'].append( [key, url] )
         json.dumps(self.data,indent=2)
         with open('config.json','w') as file:
-            file.write(json.dumps(self.data))
+            file.write(json.dumps(self.data,indent=2))
                 
     def List(self):
         (':-+.. PodCasts Cadastrados ..+-:')
