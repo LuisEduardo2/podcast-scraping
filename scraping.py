@@ -1,9 +1,10 @@
 from requests import get as resget
 from bs4 import BeautifulSoup
-from pyperclip import copy, paste
+from pyperclip import paste
+from os import system, name as osname
 import urllib.request, json
 
-clear = lambda: __import__('os').system('cls') if __import__('os').name == 'nt' else __import__('os').system('clear')
+clear = lambda: system('cls') if osname == 'nt' else system('clear')
 
 class PodcastScraping():
     def __init__(self, confdata):
@@ -24,6 +25,8 @@ class PodcastScraping():
                         raise(TypeError)
                 except TypeError:
                     print('Opção invalida.')
+                except ValueError:
+                    print('O codigo inserido não e valido!')
                 else:
                     break
             if(option == 0):
@@ -52,7 +55,7 @@ class PodcastScraping():
             file.write(json.dumps(self.data,indent=2))
                 
     def List(self):
-        (':-+.. PodCasts Cadastrados ..+-:')
+        print(':-+.. PodCasts Cadastrados ..+-:')
         [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
     
     def PodcastDownload(self):
