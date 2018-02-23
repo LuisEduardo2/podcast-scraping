@@ -108,7 +108,7 @@ class PodcastScraping():
                         return
                     try:
                         mkdir('podcasts/'+podname)
-                    except Exception:
+                    except FileExistsError:
                         pass
                     if(selected == 'all'):
                         for url,filename in links:
@@ -134,7 +134,7 @@ def main():
     finally:
         try: 
             mkdir('podcasts')
-        except Exception:
+        except FileExistsError:
             pass
         PodcastScraping(confdata).menu()
     input('\nPress any key to continue!')
