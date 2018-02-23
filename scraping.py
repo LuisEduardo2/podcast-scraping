@@ -1,7 +1,7 @@
 from requests import get as resget
 from bs4 import BeautifulSoup
 from pyperclip import paste
-from os import system, name as osname
+from os import system, name as osname, mkdir
 import urllib.request, json
 
 clear = lambda: system('cls') if osname == 'nt' else system('clear')
@@ -84,14 +84,13 @@ class PodcastScraping():
                 print(':: {} successfully downloaded'.format(filename))
 
     def __DownloadEpisode(self,podname,podurl):
-        print('Loading page')
         try:
             response = resget(podurl)
         except Exception:
             print('Ocorreu um erro ao conectar a url cadastrada, tente novamente mais tarde!')
         else:
             if(response.status_code == 200):
-                print('Trying to retrieve the episodes')
+                print('Recuperando Lista de Episodios.')
                 soup = BeautifulSoup(response.content, 'html.parser')
                 links = []
                 for link in reversed(soup.find_all('enclosure')):
@@ -100,11 +99,17 @@ class PodcastScraping():
                     links.append( [url,filename] )
 
                 if(len(links) == 0):
-                    print('No episode was found')
+                    print('Não foi encontrado nenhum episodio.')
                 else:
                     [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
                     selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
-                    __import__('os').system('mkdir podcasts/'+podname)
+                    if(selected == ''):
+                        print('Retornando ao menu!')
+                        return
+                    try:
+                        mkdir('podcasts/'+podname)
+                    except Exception:
+                        pass
                     if(selected == 'all'):
                         for url,filename in links:
                             try:
@@ -127,9 +132,12 @@ def main():
         confdata = {}
         confdata['values'] = []
     finally:
-        __import__('os').system('mkdir podcasts')
+        try: 
+            mkdir('podcasts')
+        except Exception:
+            pass
         PodcastScraping(confdata).menu()
-    input('Press any key to continue!')
+    input('\nPress any key to continue!')
 
 if(__name__ == '__main__'):
     main()
