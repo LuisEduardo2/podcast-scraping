@@ -2,7 +2,8 @@ from requests import get as resget
 from bs4 import BeautifulSoup
 from pyperclip import paste
 from os import system, name as osname, mkdir
-import urllib.request, json
+from tqdm import tqdm
+import json
 
 clear = lambda: system('cls') if osname == 'nt' else system('clear')
 
@@ -77,11 +78,12 @@ class PodcastScraping():
                 print('{} already exists.'.format(filename))
         except IOError:
             print('Current downloading file: {}'.format(filename))
-            f = urllib.request.urlopen(url)
-            data = f.read()
-            with open('podcasts/'+podname+'/'+filename, "wb") as code:
-                code.write(data)
-                print(':: {} successfully downloaded'.format(filename))
+            r = resget(url, stream=True)
+            filesize = int(r.headers['content-length']) / 1024
+            with open('podcasts/'+podname+'/'+filename, 'wb') as f:
+                for data in tqdm(iterable = r.iter_content(1024),total=filesize,unit='KB',unit_scale=True):
+                    f.write(data)
+            print(':: {} successfully downloaded'.format(filename))
 
     def __DownloadEpisode(self,podname,podurl):
         try:
@@ -95,35 +97,39 @@ class PodcastScraping():
                 links = []
                 for link in reversed(soup.find_all('enclosure')):
                     url = link.get('url')
-                    filename = url.split('/')[-1]
+                    filename = ((url.split('/')[-1]).split('.mp3'))[0] + '.mp3'
                     links.append( [url,filename] )
 
                 if(len(links) == 0):
                     print('Não foi encontrado nenhum episodio.')
                 else:
                     [print(' {}  -  {}'.format(index,episodes[1])) for index,episodes in enumerate(links)]
-                    selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
-                    if(selected == ''):
-                        print('Retornando ao menu!')
-                        return
                     try:
-                        mkdir('podcasts/'+podname)
-                    except FileExistsError:
-                        pass
-                    if(selected == 'all'):
-                        for url,filename in links:
-                            try:
-                                self.__DownloadFile(url,filename,podname)
-                            except ValueError:
-                                print("Podcast de nome '{}' não encontrado".format(filename))
-                        print('Episodios Baixados com sucesso!')
-                    else:
-                        for i in selected.split('-'):
-                            url,filename = links[int(i)]
-                            try:
-                                self.__DownloadFile(url,filename,podname)
-                            except(TypeError,ValueError):
-                                print('Podcast de código {} não encontrado'.format(i))
+                        selected = str(input("Digite 'all' para baixar todos os episodios ou insira os codigos dos episodios que deseja baixar \nseparado por um '-': "))
+                        if(selected == ''):
+                            raise(ValueError)
+                        try:
+                            mkdir('podcasts/'+podname)
+                        except FileExistsError:
+                            pass
+                        if(selected == 'all'):
+                            for url,filename in links:
+                                try:
+                                    self.__DownloadFile(url,filename,podname)
+                                except ValueError:
+                                    print("Podcast de nome '{}' não encontrado".format(filename))
+                            print('Episodios Baixados com sucesso!')
+                        else:
+                            selected = [int(i) for i in selected.split('-')]
+                            for i in selected:
+                                try:
+                                    url,filename = links[i]
+                                    self.__DownloadFile(url,filename,podname)
+                                except(TypeError,ValueError,IndexError):
+                                    print('Podcast de código {} não encontrado'.format(i))
+                    except ValueError:
+                        print('Codigo Invalido. Retornando ao menu!')
+
 
 def main():
     try:
