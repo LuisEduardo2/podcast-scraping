@@ -57,10 +57,16 @@ class PodcastScraping():
                 
     def List(self):
         print(':-+.. PodCasts Cadastrados ..+-:')
-        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
+        if len( self.data['values'] ) == 0:
+            print('Nenhum cadastro encontrado!')
+            return
+        [print(' {} -> {} - {}'.format(index,values[0],values[1])) for index,values in enumerate(self.data['values'])]
     
     def PodcastDownload(self):
         print(':-+.. Donwload de Episodios ..+-:')
+        if len( self.data['values'] ) == 0:
+            print('Nenhum cadastro encontrado!')
+            return
         [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
         try:
             code = int(input('Escolha um podcast: '))
