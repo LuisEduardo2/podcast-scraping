@@ -1,3 +1,4 @@
+from time import sleep
 from requests import get as resget
 from bs4 import BeautifulSoup
 from pyperclip import paste
@@ -60,14 +61,14 @@ class PodcastScraping():
         if len( self.data['values'] ) == 0:
             print('Nenhum cadastro encontrado!')
             return
-        [print(' {} -> {} - {}'.format(index,values[0],values[1])) for index,values in enumerate(self.data['values'])]
+        [print('{0:2} -> {1:15} {2}'.format(index,values[0],values[1])) for index,values in enumerate(self.data['values'])]
     
     def PodcastDownload(self):
         print(':-+.. Donwload de Episodios ..+-:')
         if len( self.data['values'] ) == 0:
             print('Nenhum cadastro encontrado!')
             return
-        [print(' {} - {}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
+        [print('{0:2} -> {1}'.format(index,values[0])) for index,values in enumerate(self.data['values'])]
         try:
             code = int(input('Escolha um podcast: '))
             if(code < 0 or code >= len(self.data['values'])):
@@ -84,11 +85,13 @@ class PodcastScraping():
                 print('{} already exists.'.format(filename))
         except IOError:
             print('Current downloading file: {}'.format(filename))
+            sleep(0.2)
             r = resget(url, stream=True)
             filesize = int(r.headers['content-length']) / 1024
             with open('podcasts/'+podname+'/'+filename, 'wb') as f:
-                for data in tqdm(iterable = r.iter_content(1024),total=filesize,unit='KB',unit_scale=True):
+                for data in tqdm(iterable = r.iter_content(1024),total=filesize,unit='',unit_scale=True):
                     f.write(data)
+            sleep(0.2)
             print(':: {} successfully downloaded'.format(filename))
 
     def __DownloadEpisode(self,podname,podurl):
@@ -121,6 +124,8 @@ class PodcastScraping():
                         if(selected == 'all'):
                             for url,filename in links:
                                 try:
+                                    print('Current downloading file: {}'.format(filename))
+                                    sleep(0.1)
                                     self.__DownloadFile(url,filename,podname)
                                 except ValueError:
                                     print("Podcast de nome '{}' não encontrado".format(filename))
@@ -149,7 +154,7 @@ def main():
         except FileExistsError:
             pass
         PodcastScraping(confdata).menu()
-    input('\nPress any key to continue!')
+    input('\nPress enter key to continue!')
 
 if(__name__ == '__main__'):
     main()
