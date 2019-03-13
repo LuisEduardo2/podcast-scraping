@@ -1,4 +1,4 @@
-# podcast-scraping
+# PodScrap
 
 Meu primeiro projeto de web scraping.
 
